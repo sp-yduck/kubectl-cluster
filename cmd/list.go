@@ -34,17 +34,19 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "view all clusters from your KUBECONFIG",
 	Long:  `view all clusters from your KUBECONFIG`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 0 {
-			return fmt.Errorf("current command doesn't accept any subcommands/args")
-		}
-		config := kubeconfig.GetRawConfig()
-		clusters := config.Clusters
-		for cluster := range clusters {
-			fmt.Println(cluster)
-		}
-		return nil
-	},
+	RunE:  List,
+}
+
+func List(cmd *cobra.Command, args []string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("current command doesn't accept any subcommands/args")
+	}
+	config := kubeconfig.GetRawConfig()
+	clusters := config.Clusters
+	for cluster := range clusters {
+		fmt.Println(cluster)
+	}
+	return nil
 }
 
 func init() {
