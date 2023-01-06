@@ -2,6 +2,15 @@
 kubectl-cluster is a tool to display/switch between Kubernetes clusters (and configure them for kubectl) easily.
 
 ## Examples
+list clusters from your KUBECOMFIG
+
+![kubectl-cluster-list](img/kubectl-cluster-list.PNG)
+
+switch current context with cluster name
+
+![kubectl-cluster-use](img/kubectl-cluster-use.PNG)
+
+### Usages
 ```
 # list clusters
 kubectl cluster
@@ -60,5 +69,4 @@ current-context: docker-desktop
 
 ## Roadmap
 - [ ] krew installation
-- [ ] detailed information for list command
 - [ ] fuzzy switching
