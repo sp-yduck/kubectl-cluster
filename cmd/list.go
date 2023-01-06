@@ -23,7 +23,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
 	"github.com/sp-yduck/kubectl-cluster/internal/kubeconfig"
@@ -42,10 +45,22 @@ func List(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("current command doesn't accept any subcommands/args")
 	}
 	config := kubeconfig.GetRawConfig()
+	currentCluster := kubeconfig.ReadCurrentCluster(config)
+	clmap, clusterNames := kubeconfig.GetClusterContextsMap(config)
 	clusters := config.Clusters
-	for cluster := range clusters {
-		fmt.Println(cluster)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"cluster", "apiserver endpoint", "context."})
+	for _, name := range clusterNames {
+		var clname string
+		if name == currentCluster {
+			clname = fmt.Sprintf("-> %s", name)
+		} else {
+			clname = fmt.Sprintf("   %s", name)
+		}
+
+		table.Append([]string{clname, clusters[name].Server, strings.Join(clmap[name], "\n")})
 	}
+	table.Render()
 	return nil
 }
 

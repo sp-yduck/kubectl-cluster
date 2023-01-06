@@ -2,6 +2,7 @@ package kubeconfig
 
 import (
 	"log"
+	"sort"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -23,4 +24,20 @@ func ReadCurrentCluster(config api.Config) (currentCluster string) {
 	currentContext := contexts[config.CurrentContext]
 	currentCluster = currentContext.Cluster
 	return currentCluster
+}
+
+func GetClusterContextsMap(config api.Config) (map[string][]string, []string) {
+	contexts := config.Contexts
+	clmap := map[string][]string{}
+	keys := []string{}
+	for name, ctx := range contexts {
+		keys = append(keys, ctx.Cluster)
+		if _, ok := clmap[ctx.Cluster]; !ok {
+			clmap[ctx.Cluster] = []string{name}
+		} else {
+			clmap[ctx.Cluster] = append(clmap[ctx.Cluster], name)
+		}
+	}
+	sort.StringSlice(keys).Sort()
+	return clmap, keys
 }
