@@ -29,34 +29,32 @@ import (
 	"github.com/sp-yduck/kubectl-cluster/internal/kubeconfig"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "view all clusters from your KUBECONFIG",
-	Long:  `view all clusters from your KUBECONFIG`,
+// currentCmd represents the current command
+var currentCmd = &cobra.Command{
+	Use:   "current",
+	Short: "show current cluster",
+	Long:  `show current cluster.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 0 {
 			return fmt.Errorf("current command doesn't accept any subcommands/args")
 		}
 		config := kubeconfig.GetRawConfig()
-		clusters := config.Clusters
-		for cluster := range clusters {
-			fmt.Println(cluster)
-		}
+		currentCluster := kubeconfig.ReadCurrentCluster(config)
+		fmt.Println(currentCluster)
 		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(currentCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// currentCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// currentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

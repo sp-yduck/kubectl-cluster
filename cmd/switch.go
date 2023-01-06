@@ -23,40 +23,48 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 
 	"github.com/sp-yduck/kubectl-cluster/internal/kubeconfig"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "view all clusters from your KUBECONFIG",
-	Long:  `view all clusters from your KUBECONFIG`,
+// switchCmd represents the switch command
+var switchCmd = &cobra.Command{
+	Use:   "switch",
+	Short: "switch current context with cluster name",
+	Long:  `switch current context with cluster name`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 0 {
-			return fmt.Errorf("current command doesn't accept any subcommands/args")
+		if len(args) != 1 {
+			return fmt.Errorf("switch command accepts only one cluster name")
 		}
 		config := kubeconfig.GetRawConfig()
-		clusters := config.Clusters
-		for cluster := range clusters {
-			fmt.Println(cluster)
+		clusters := map[string]string{}
+		for name, context := range config.Contexts {
+			cl := context.Cluster
+			clusters[cl] = name
 		}
+		contextName, ok := clusters[args[0]]
+		if !ok {
+			log.Fatalf("there is no context using cluster \"%s\"\n", args[0])
+		}
+		config.CurrentContext = contextName
+		fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", args[0], contextName)
 		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(switchCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// switchCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// switchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
