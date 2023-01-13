@@ -46,7 +46,12 @@ func Save(config api.Config) error {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	filename := kubeConfig.ConfigAccess().GetExplicitFile()
+	var filename string
+	if kubeConfig.ConfigAccess().IsExplicitFile() {
+		filename = kubeConfig.ConfigAccess().GetExplicitFile()
+	} else {
+		filename = kubeConfig.ConfigAccess().GetDefaultFilename()
+	}
 	err := clientcmd.WriteToFile(config, filename)
 	return err
 }
