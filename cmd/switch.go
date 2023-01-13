@@ -53,6 +53,10 @@ func Switch(cmd *cobra.Command, args []string) error {
 		log.Fatalf("there is no context using cluster \"%s\"\n", args[0])
 	}
 	config.CurrentContext = contextName
+	err := kubeconfig.Save(config)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", args[0], contextName)
 	return nil
 }

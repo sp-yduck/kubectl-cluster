@@ -41,3 +41,12 @@ func GetClusterContextsMap(config api.Config) (map[string][]string, []string) {
 	sort.StringSlice(keys).Sort()
 	return clmap, keys
 }
+
+func Save(config api.Config) error {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	filename := kubeConfig.ConfigAccess().GetDefaultFilename()
+	err := clientcmd.WriteToFile(config, filename)
+	return err
+}
