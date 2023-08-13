@@ -25,7 +25,13 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+
+	"github.com/sp-yduck/kubectl-cluster/pkg/log"	
 )
+
+var verbose bool
+var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -34,7 +40,15 @@ var rootCmd = &cobra.Command{
 	Long:  `kubectl plugin for cluster context control`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	RunE: List,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if verbose {
+			log.InitLogger(zap.InfoLevel)
+		} 
+		if debug {
+			log.InitLogger(zap.DebugLevel)
+		}
+		return runRoot(cmd, args)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -46,14 +60,20 @@ func Execute() {
 	}
 }
 
+func runRoot(cmd *cobra.Command, args []string) error {
+	zap.S().Debugf("root command called: args=%v", args)
+	if len(args) == 0 {
+		return list(cmd)
+	}
+	return use(cmd, args)
+}
+
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kubectl-cluster.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
+	cobra.OnInitialize(func() {
+		log.InitLogger(zap.FatalLevel)
+	})
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "kubeconfig", "", "config file (default is $HOME/.kube/config)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,  "enable info level log")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug level log")
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

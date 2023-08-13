@@ -1,29 +1,35 @@
 package kubeconfig
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"sort"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func GetRawConfig() (config api.Config) {
+func GetRawConfig() (*api.Config, error ) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 	config, err := kubeConfig.RawConfig()
 	if err != nil {
-		log.Fatal("couldn't get kubeconfig")
+		return nil, err
 	}
-	return config
+	return &config, nil
 }
 
-func ReadCurrentCluster(config api.Config) (currentCluster string) {
+func ReadCurrentCluster(config api.Config) (string, error) {
+	if config.CurrentContext == "" {
+		return "", errors.New("current context is not present")
+	}
 	contexts := config.Contexts
-	currentContext := contexts[config.CurrentContext]
-	currentCluster = currentContext.Cluster
-	return currentCluster
+	currentContext, ok := contexts[config.CurrentContext]
+	if !ok {
+		return "", fmt.Errorf("current context %s is not found in contexts", config.CurrentContext)
+	}
+	return currentContext.Cluster, nil
 }
 
 func GetClusterContextsMap(config api.Config) (map[string][]string, []string) {

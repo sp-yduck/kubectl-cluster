@@ -22,27 +22,34 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/spf13/cobra"
+
+	"github.com/sp-yduck/kubectl-cluster/pkg/kubeconfig"
 )
 
-// useCmd represents the use command
-var useCmd = &cobra.Command{
-	Use:   "use",
-	Short: "switch current context with cluster name",
-	Long:  `switch current context with cluster name`,
-	RunE:  Switch,
-}
-
-func init() {
-	rootCmd.AddCommand(useCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// useCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// useCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func use(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("switch command accepts only one cluster name")
+	}
+	config, err := kubeconfig.GetRawConfig()
+	if err != nil {
+		return err
+	}
+	clusters := map[string]string{}
+	for name, context := range config.Contexts {
+		clusters[context.Cluster] = name
+	}
+	contextName, ok := clusters[args[0]]
+	if !ok {
+		log.Fatalf("there is no context using cluster \"%s\"\n", args[0])
+	}
+	config.CurrentContext = contextName
+	if err := kubeconfig.Save(*config); err != nil {
+		return err
+	}
+	fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", args[0], contextName)
+	return nil
 }

@@ -21,7 +21,9 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/sp-yduck/kubectl-cluster/cmd"
+import (
+	"github.com/sp-yduck/kubectl-cluster/cmd"
+)
 
 func main() {
 	cmd.Execute()

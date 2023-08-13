@@ -28,25 +28,23 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
-	"github.com/sp-yduck/kubectl-cluster/internal/kubeconfig"
+	"github.com/sp-yduck/kubectl-cluster/pkg/kubeconfig"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "view all clusters from your KUBECONFIG",
-	Long:  `view all clusters from your KUBECONFIG`,
-	RunE:  List,
-}
-
-func List(cmd *cobra.Command, args []string) error {
-	if len(args) != 0 {
-		return fmt.Errorf("current command doesn't accept any subcommands/args")
+func list(cmd *cobra.Command) error {
+	config, err := kubeconfig.GetRawConfig()
+	if err != nil {
+		zap.S().Errorf("failed to get kubeconfig")
+		return err
 	}
-	config := kubeconfig.GetRawConfig()
-	currentCluster := kubeconfig.ReadCurrentCluster(config)
-	clmap, clusterNames := kubeconfig.GetClusterContextsMap(config)
+	currentCluster, err := kubeconfig.ReadCurrentCluster(*config)
+	if err != nil {
+		zap.S().Errorf("failed to read current cluster from kubeconfig: %v", err)
+		return err
+	}
+	clmap, clusterNames := kubeconfig.GetClusterContextsMap(*config)
 	clusters := config.Clusters
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"cluster", "apiserver endpoint", "context."})
@@ -62,18 +60,4 @@ func List(cmd *cobra.Command, args []string) error {
 	}
 	table.Render()
 	return nil
-}
-
-func init() {
-	rootCmd.AddCommand(listCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
