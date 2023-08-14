@@ -27,9 +27,9 @@ import (
 	"github.com/sp-yduck/kubectl-cluster/pkg/cmd"
 )
 
-func main() {
-	rootCmd := cmd.NewRootCommand()
+var rootCmd = cmd.NewRootCommand()
 
+func main() {
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

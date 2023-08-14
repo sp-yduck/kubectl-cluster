@@ -5,20 +5,8 @@ import (
 	"fmt"
 	"sort"
 
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
-
-func getRawConfig() (*api.Config, error ) {
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	config, err := kubeConfig.RawConfig()
-	if err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
 
 func readCurrentCluster(config api.Config) (string, error) {
 	if config.CurrentContext == "" {
@@ -27,7 +15,10 @@ func readCurrentCluster(config api.Config) (string, error) {
 	contexts := config.Contexts
 	currentContext, ok := contexts[config.CurrentContext]
 	if !ok {
-		return "", fmt.Errorf("current context %s is not found in contexts", config.CurrentContext)
+		return "", fmt.Errorf("current context '%s' is not found in contexts", config.CurrentContext)
+	}
+	if currentContext.Cluster == "" {
+		return "", fmt.Errorf("context '%s' does not have cluster info", config.CurrentContext)
 	}
 	return currentContext.Cluster, nil
 }
@@ -46,17 +37,4 @@ func getClusterContextsMap(config api.Config) (map[string][]string, []string) {
 	}
 	sort.StringSlice(keys).Sort()
 	return clmap, keys
-}
-
-func write(config api.Config) error {
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	var filename string
-	if kubeConfig.ConfigAccess().IsExplicitFile() {
-		filename = kubeConfig.ConfigAccess().GetExplicitFile()
-	} else {
-		filename = kubeConfig.ConfigAccess().GetDefaultFilename()
-	}
-	return clientcmd.WriteToFile(config, filename)
 }

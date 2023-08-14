@@ -28,20 +28,16 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"go.uber.org/zap"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func ListClusters() error {
-	config, err := getRawConfig()
-	if err != nil {
-		zap.S().Errorf("failed to get kubeconfig: %v", err)
-		return err
-	}
-	currentCluster, err := readCurrentCluster(*config)
+func ListClusters(config api.Config) error {
+	currentCluster, err := readCurrentCluster(config)
 	if err != nil {
 		zap.S().Errorf("failed to read current cluster from kubeconfig: %v", err)
 		return err
 	}
-	clmap, clusterNames := getClusterContextsMap(*config)
+	clmap, clusterNames := getClusterContextsMap(config)
 	clusters := config.Clusters
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"cluster", "apiserver endpoint", "context"})

@@ -25,14 +25,11 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func SwitchCurrencContextByClusrter(cluster string) error {
-	config, err := getRawConfig()
-	if err != nil {
-		zap.S().Errorf("failed to get kubeconfig: %v", err)
-		return err
-	}
+func SwitchCurrencContextByClusrter(cluster string, config api.Config, filepath string) error {
 	clusters := map[string]string{}
 	for name, context := range config.Contexts {
 		clusters[context.Cluster] = name
@@ -43,7 +40,7 @@ func SwitchCurrencContextByClusrter(cluster string) error {
 		return fmt.Errorf("there is no context using cluster %s", cluster)
 	}
 	config.CurrentContext = contextName
-	if err := write(*config); err != nil {
+	if err := clientcmd.WriteToFile(config, filepath); err != nil {
 		zap.S().Errorf("failed to save changes on kubeconfig: %v", err)
 		return err
 	}
