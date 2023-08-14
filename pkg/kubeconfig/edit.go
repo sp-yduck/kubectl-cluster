@@ -19,45 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package kubeconfig
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-
-	"github.com/sp-yduck/kubectl-cluster/pkg/kubeconfig"
 )
 
-func list(cmd *cobra.Command) error {
-	config, err := kubeconfig.GetRawConfig()
+func SwitchCurrencContextByClusrter(cluster string) error {
+	config, err := getRawConfig()
 	if err != nil {
-		zap.S().Errorf("failed to get kubeconfig")
+		zap.S().Errorf("failed to get kubeconfig: %v", err)
 		return err
 	}
-	currentCluster, err := kubeconfig.ReadCurrentCluster(*config)
-	if err != nil {
-		zap.S().Errorf("failed to read current cluster from kubeconfig: %v", err)
+	clusters := map[string]string{}
+	for name, context := range config.Contexts {
+		clusters[context.Cluster] = name
+	}
+	contextName, ok := clusters[cluster]
+	if !ok {
+		zap.S().Errorf("there is no context using cluster %s", cluster)
+		return fmt.Errorf("there is no context using cluster %s", cluster)
+	}
+	config.CurrentContext = contextName
+	if err := write(*config); err != nil {
+		zap.S().Errorf("failed to save changes on kubeconfig: %v", err)
 		return err
 	}
-	clmap, clusterNames := kubeconfig.GetClusterContextsMap(*config)
-	clusters := config.Clusters
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"cluster", "apiserver endpoint", "context."})
-	for _, name := range clusterNames {
-		var clname string
-		if name == currentCluster {
-			clname = fmt.Sprintf("-> %s", name)
-		} else {
-			clname = fmt.Sprintf("   %s", name)
-		}
-
-		table.Append([]string{clname, clusters[name].Server, strings.Join(clmap[name], "\n")})
-	}
-	table.Render()
+	fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", cluster, contextName)
 	return nil
 }

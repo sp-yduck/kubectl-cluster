@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func GetRawConfig() (*api.Config, error ) {
+func getRawConfig() (*api.Config, error ) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
@@ -20,7 +20,7 @@ func GetRawConfig() (*api.Config, error ) {
 	return &config, nil
 }
 
-func ReadCurrentCluster(config api.Config) (string, error) {
+func readCurrentCluster(config api.Config) (string, error) {
 	if config.CurrentContext == "" {
 		return "", errors.New("current context is not present")
 	}
@@ -32,7 +32,7 @@ func ReadCurrentCluster(config api.Config) (string, error) {
 	return currentContext.Cluster, nil
 }
 
-func GetClusterContextsMap(config api.Config) (map[string][]string, []string) {
+func getClusterContextsMap(config api.Config) (map[string][]string, []string) {
 	contexts := config.Contexts
 	clmap := map[string][]string{}
 	keys := []string{}
@@ -48,7 +48,7 @@ func GetClusterContextsMap(config api.Config) (map[string][]string, []string) {
 	return clmap, keys
 }
 
-func Save(config api.Config) error {
+func write(config api.Config) error {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
@@ -58,6 +58,5 @@ func Save(config api.Config) error {
 	} else {
 		filename = kubeConfig.ConfigAccess().GetDefaultFilename()
 	}
-	err := clientcmd.WriteToFile(config, filename)
-	return err
+	return clientcmd.WriteToFile(config, filename)
 }

@@ -19,37 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package kubeconfig
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"strings"
 
-	"github.com/spf13/cobra"
-
-	"github.com/sp-yduck/kubectl-cluster/pkg/kubeconfig"
+	"github.com/olekukonko/tablewriter"
+	"go.uber.org/zap"
 )
 
-func use(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("switch command accepts only one cluster name")
-	}
-	config, err := kubeconfig.GetRawConfig()
+func ListClusters() error {
+	config, err := getRawConfig()
 	if err != nil {
+		zap.S().Errorf("failed to get kubeconfig: %v", err)
 		return err
 	}
-	clusters := map[string]string{}
-	for name, context := range config.Contexts {
-		clusters[context.Cluster] = name
-	}
-	contextName, ok := clusters[args[0]]
-	if !ok {
-		log.Fatalf("there is no context using cluster \"%s\"\n", args[0])
-	}
-	config.CurrentContext = contextName
-	if err := kubeconfig.Save(*config); err != nil {
+	currentCluster, err := readCurrentCluster(*config)
+	if err != nil {
+		zap.S().Errorf("failed to read current cluster from kubeconfig: %v", err)
 		return err
 	}
-	fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", args[0], contextName)
+	clmap, clusterNames := getClusterContextsMap(*config)
+	clusters := config.Clusters
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"cluster", "apiserver endpoint", "context"})
+	for _, name := range clusterNames {
+		var clname string
+		if name == currentCluster {
+			clname = fmt.Sprintf("-> %s", name)
+		} else {
+			clname = fmt.Sprintf("   %s", name)
+		}
+		table.Append([]string{clname, clusters[name].Server, strings.Join(clmap[name], "\n")})
+	}
+	table.Render()
 	return nil
 }
