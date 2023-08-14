@@ -19,42 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package kubeconfig
 
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
-	"github.com/sp-yduck/kubectl-cluster/internal/kubeconfig"
+	"go.uber.org/zap"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// currentCmd represents the current command
-var currentCmd = &cobra.Command{
-	Use:   "current",
-	Short: "show current cluster",
-	Long:  `show current cluster.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 0 {
-			return fmt.Errorf("current command doesn't accept any subcommands/args")
-		}
-		config := kubeconfig.GetRawConfig()
-		currentCluster := kubeconfig.ReadCurrentCluster(config)
-		fmt.Println(currentCluster)
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(currentCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// currentCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// currentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func SwitchCurrencContextByClusrter(cluster string, config api.Config, filepath string) error {
+	clusters := map[string]string{}
+	for name, context := range config.Contexts {
+		clusters[context.Cluster] = name
+	}
+	contextName, ok := clusters[cluster]
+	if !ok {
+		zap.S().Errorf("there is no context using cluster %s", cluster)
+		return fmt.Errorf("there is no context using cluster %s", cluster)
+	}
+	config.CurrentContext = contextName
+	if err := clientcmd.WriteToFile(config, filepath); err != nil {
+		zap.S().Errorf("failed to save changes on kubeconfig: %v", err)
+		return err
+	}
+	fmt.Printf("switched to cluster \"%s\" (context: \"%s\")\n", cluster, contextName)
+	return nil
 }

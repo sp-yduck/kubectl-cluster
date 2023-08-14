@@ -6,30 +6,13 @@ list clusters from your KUBECOMFIG
 
 ![kubectl-cluster-list](img/kubectl-cluster-list.PNG)
 
-switch current context with cluster name
-
-![kubectl-cluster-use](img/kubectl-cluster-use.PNG)
-
 ### Usages
 ```
 # list clusters
 kubectl cluster
-  or
-kubectl cluster list
-
-# show current cluster
-kubectl cluster current
 
 # swith context with cluster name
-kubectl cluster use <cluster>
-  or
-kubectl cluster switch <cluster>
-
-# show usages
-kubectl cluster help
-
-# completion
-kubectl cluster completion <shell>
+kubectl cluster <cluster>
 ```
 
 ## Installation

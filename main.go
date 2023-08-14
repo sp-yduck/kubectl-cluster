@@ -21,8 +21,17 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/sp-yduck/kubectl-cluster/cmd"
+import (
+	"os"
+
+	"github.com/sp-yduck/kubectl-cluster/pkg/cmd"
+)
+
+var rootCmd = cmd.NewRootCommand()
 
 func main() {
-	cmd.Execute()
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
 }
